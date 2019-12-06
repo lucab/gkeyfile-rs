@@ -5,3 +5,4 @@ authors = ["Luca BRUNO <luca.bruno@coreos.com>"]
 edition = "2018"
 
 [dependencies]
+snafu = "0.6"
