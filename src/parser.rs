@@ -3,6 +3,7 @@
 use crate::errors;
 use crate::Keyfile;
 use crate::Value;
+use snafu::ResultExt;
 use std::collections::HashMap;
 
 pub(crate) fn parse_buf<T>(bufrd: T) -> errors::Result<Keyfile>
@@ -14,10 +15,7 @@ where
 
     for (index, entry) in bufrd.lines().enumerate() {
         let line_num = index.saturating_add(1);
-        let line = entry.map_err(|source| errors::Error::FailedRead {
-            line: line_num,
-            source,
-        })?;
+        let line = entry.context(errors::FailedRead { line: line_num })?;
 
         // Skip silent lines (comments and blank content).
         if is_silent(&line) {
@@ -36,10 +34,11 @@ where
         let group = match current_group {
             Some(ref g) => g,
             None => {
-                return Err(errors::Error::Malformed {
+                return Err(errors::IntError::Malformed {
                     line: line_num,
                     reason: "content outside of group context".to_string(),
-                })
+                }
+                .into())
             }
         };
 
@@ -64,17 +63,19 @@ fn is_new_group(line: &str) -> bool {
 /// Parse a group identifier.
 fn parse_group(line_num: usize, line: String) -> errors::Result<String> {
     if !line.starts_with('[') {
-        return Err(errors::Error::Malformed {
+        return Err(errors::IntError::Malformed {
             line: line_num,
             reason: "missing group start marker".to_string(),
-        });
+        }
+        .into());
     }
 
     if !line.ends_with(']') {
-        return Err(errors::Error::Malformed {
+        return Err(errors::IntError::Malformed {
             line: line_num,
             reason: "missing group end marker".to_string(),
-        });
+        }
+        .into());
     }
 
     let trimmed = line.trim_start_matches('[').trim_end_matches(']').trim();
@@ -85,10 +86,11 @@ fn parse_group(line_num: usize, line: String) -> errors::Result<String> {
 fn parse_kv(line_num: usize, line: String) -> errors::Result<(String, Value)> {
     let parts: Vec<_> = line.splitn(2, '=').collect();
     if parts.len() < 2 {
-        return Err(errors::Error::Malformed {
+        return Err(errors::IntError::Malformed {
             line: line_num,
             reason: "invalid key-value format".to_string(),
-        });
+        }
+        .into());
     };
 
     let (key, value_str) = (parts[0].trim_end(), parts[1].trim_start());

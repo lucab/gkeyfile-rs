@@ -5,11 +5,15 @@ use snafu::Snafu;
 /// Result with library-specific error types.
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
-/// Error variants.
+/// Library errors.
+#[derive(Debug, Snafu)]
+pub struct Error(IntError);
+
+/// Internal error variants.
 #[allow(missing_docs)]
 #[derive(Debug, Snafu)]
 #[snafu(visibility = "pub(crate)")]
-pub enum Error {
+pub(crate) enum IntError {
     /// Failed to read content.
     #[snafu(display("failed to read content at line {}: {}", line, source))]
     FailedRead { line: usize, source: std::io::Error },
