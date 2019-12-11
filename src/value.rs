@@ -1,6 +1,7 @@
 //! Value type.
 
 use crate::errors;
+use snafu::OptionExt;
 
 /// Value variants.
 #[derive(Debug, Eq, PartialEq)]
@@ -23,9 +24,10 @@ impl Value {
     pub fn parse(input: String) -> errors::Result<Self> {
         let parts: Vec<_> = input.split(';').collect();
         match parts.len() {
-            0 => Err(errors::Error::InvalidValue {
+            0 => Err(errors::IntError::InvalidValue {
                 reason: "empty value".to_string(),
-            }),
+            }
+            .into()),
             1 => Self::parse_single(parts[0]),
             _ => Self::parse_collection(parts),
         }
@@ -33,7 +35,7 @@ impl Value {
 
     fn parse_collection(parts: Vec<&str>) -> errors::Result<Self> {
         let mut input = parts;
-        let first = input.pop().ok_or(errors::Error::InvalidValue {
+        let first = input.pop().context(errors::InvalidValue {
             reason: "empty value list".to_string(),
         })?;
         let mut accumul = Self::parse_single(first)?;
@@ -83,9 +85,10 @@ impl Value {
                 Value::NumberList(list)
             }
             _ => {
-                return Err(errors::Error::InvalidValue {
+                return Err(errors::IntError::InvalidValue {
                     reason: "mismatched types".into(),
-                })
+                }
+                .into())
             }
         };
         Ok(list)

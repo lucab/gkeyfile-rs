@@ -2,12 +2,13 @@
 
 #[deny(missing_docs)]
 #[deny(missing_debug_implementations)]
-pub mod errors;
+mod errors;
 mod keyfile;
 mod parser;
 mod value;
 mod writer;
 
+pub use errors::{Error, Result};
 pub use keyfile::Keyfile;
 pub use value::Value;
 
@@ -20,7 +21,7 @@ where
     Keyfile::parse_buf(bufrd)
 }
 
-/// Serialize a Keyfile from an IO reader.
+/// Serialize a Keyfile to an IO reader.
 pub fn to_writer<W>(writer: &mut W, value: &Keyfile) -> errors::Result<()>
 where
     W: std::io::Write,
